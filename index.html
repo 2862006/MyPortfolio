@@ -843,17 +843,17 @@ footer .wrap{position:relative; z-index:1;}
       </div>
       <form class="contact-form reveal" id="contactForm">
         <div class="form-row">
-          <div class="field"><label for="name">Name</label><input type="text" id="name" required></div>
-          <div class="field"><label for="email">Email</label><input type="email" id="email" required></div>
+          <div class="field"><label for="name">Name</label><input type="text" id="name" name="name" required></div>
+          <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" required></div>
         </div>
-        <div class="field full"><label for="subject">Subject</label><input type="text" id="subject"></div>
-        <div class="field full"><label for="message">Message</label><textarea id="message" required></textarea></div>
+        <div class="field full"><label for="subject">Subject</label><input type="text" id="subject" name="subject"></div>
+        <div class="field full"><label for="message">Message</label><textarea id="message" name="message" required></textarea></div>
         <label class="phone-request">
-          <input type="checkbox" id="requestPhone">
+          <input type="checkbox" id="requestPhone" name="requestPhone">
           <span>Request a phone number</span>
         </label>
-        <button type="submit" class="btn btn-primary form-submit">Send Message</button>
-        <div class="form-note">Messages open directly in your email client.</div>
+        <button type="submit" class="btn btn-primary form-submit" id="formSubmitBtn">Send Message</button>
+        <div class="form-note" id="formNote">Your message goes straight to my inbox.</div>
       </form>
     </div>
   </div>
@@ -915,13 +915,41 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
 document.getElementById('contactForm').addEventListener('submit', function(e){
   e.preventDefault();
-  const name = document.getElementById('name').value;
-  const email = document.getElementById('email').value;
-  const subject = document.getElementById('subject').value || 'Portfolio Contact';
-  const message = document.getElementById('message').value;
+  const form = e.target;
+  const btn = document.getElementById('formSubmitBtn');
+  const note = document.getElementById('formNote');
   const wantsPhone = document.getElementById('requestPhone').checked;
-  const body = `Name: ${name}\nEmail: ${email}${wantsPhone ? '\nRequested: phone number' : ''}\n\n${message}`;
-  window.location.href = `mailto:roshanparida2006@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  const formData = new FormData(form);
+  formData.set('requestPhone', wantsPhone ? 'Yes — please share phone number' : 'No');
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  note.textContent = 'Your message goes straight to my inbox.';
+  note.style.color = '';
+
+  fetch('https://formspree.io/f/xnpqayqg', {
+    method: 'POST',
+    body: formData,
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(response => {
+    if(response.ok){
+      form.reset();
+      btn.textContent = 'Send Message';
+      btn.disabled = false;
+      note.textContent = '✓ Message sent — thank you! I\'ll get back to you soon.';
+      note.style.color = '#22c55e';
+    } else {
+      throw new Error('Submission failed');
+    }
+  })
+  .catch(() => {
+    btn.textContent = 'Send Message';
+    btn.disabled = false;
+    note.textContent = 'Something went wrong — please email me directly instead.';
+    note.style.color = '#ef4444';
+  });
 });
 
 // Scroll progress bar
